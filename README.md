@@ -1,28 +1,12 @@
-# API Assessment — Node.js (CommonJS) + Express + Mongoose
+# API Assessment — Node.js + Express + Mongoose
 
 ## Setup
 
 ```bash
 npm install
-cp .env.example .env   # then fill in MONGO_URI / JWT_SECRET
-npm start               # or: npm run dev (nodemon)
+.env   # then fill in MONGO_URI / JWT_SECRET
+nodemon  # or: npm run dev (nodemon)
 ```
-
-Requires a running MongoDB instance (local or Atlas) reachable at `MONGO_URI`.
-
-## Endpoints
-
-Base path: `/api/users`
-
-| # | Method | Path | Auth | Purpose |
-|---|--------|------|------|---------|
-| 1 | POST | `/create` | none | Register a user |
-| 2 | PUT | `/change-status` | token | Flip every user's status |
-| 3 | GET | `/distance` | token | Distance from caller to a destination point |
-| 4 | GET | `/listing` | token | Users grouped by registration day |
-
-Auth header (any of these works): `Authorization: Bearer <token>` or `token: <token>`.
-Get a token from the `/create` response.
 
 ---
 
@@ -64,6 +48,8 @@ Password is hashed with bcrypt before saving. `latitude`/`longitude` are also st
 `Point` (used by endpoint 3), and the registration weekday is precomputed and stored
 (used by endpoint 4) — see "Design notes" below.
 
+![alt text](image.png)
+
 ---
 
 ### 2. Change Users Status — `PUT /api/users/change-status`
@@ -84,6 +70,8 @@ User.updateMany({}, [
 ```
 MongoDB computes the new value per document server-side in a single query.
 
+![alt text](image-1.png)
+
 ---
 
 ### 3. Get Distance — `GET /api/users/distance?Destination_Latitude=..&Destination_Longitude=..`
@@ -101,6 +89,8 @@ against the destination point — all in a single MongoDB query, no loops.
 user's stored `location` (a `2dsphere`-indexed GeoJSON point), which does spherical
 distance math natively in MongoDB and returns the result directly — no manual
 Haversine loop in Node.
+
+![alt text](image-2.png)
 
 ---
 
@@ -121,23 +111,13 @@ Only the requested days appear as keys in the response.
     "monday": [{ "name": "Alice", "email": "alice@test.com" }]
   }
 }
+
 ```
 
 **Example — `week_number=1,2,3`** returns `monday`, `tuesday`, `wednesday` keys only.
 
-**Design notes for scale (spec explicitly calls out "1 Crore users"):**
-- At creation time, each user's registration weekday is precomputed into an indexed
-  `register_day` field (`0`–`6`), matching JS `Date#getDay()`.
-- The listing query is then a single indexed pass:
-  `$match (register_day $in [...]) → $project (name/email only) → $group by day`.
-  It never computes the weekday per-document at read time, and never loops over users
-  in application code — MongoDB does one indexed scan of just the matching documents.
-- Each day's array is capped (`LISTING_PER_DAY_LIMIT`, default 1000) so a single response
-  stays bounded even if millions of users share a registration day. For exporting a full
-  day's users at that scale, pair this with a cursor/keyset-paginated endpoint
-  (e.g. `?day=1&after_id=...`) rather than returning one unbounded array.
+![alt text](image-3.png)
 
----
 
 ## Project structure
 
@@ -150,5 +130,5 @@ api-assessment/
 ├── controllers/userController.js  # All 4 endpoint handlers
 ├── routes/userRoutes.js    # Route wiring
 ├── package.json
-└── .env.example
+└── .env
 ```
