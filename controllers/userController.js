@@ -1,23 +1,13 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const generateToken = require('../utils/generateToken');
+const DAY_NAMES = require('../utils/daysName');
 
-const DAY_NAMES = [
-  'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
-];
 
-const generateToken = (user) =>
-  jwt.sign(
-    { id: user._id, email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-  );
-
-/**
- * 1. Create User
- * POST /api/users/create
- * Body: { name, email, password, address, latitude, longitude, status? }
+/*
+  1). Create User
+  POST /api/users/create
  */
 exports.createUser = async (req, res) => {
   try {
@@ -88,18 +78,15 @@ exports.createUser = async (req, res) => {
   }
 };
 
-/**
- * 2. Change Users Status
- * PUT /api/users/change-status
- * Header: token
- * Flips EVERY user's status (active -> inactive, inactive -> active)
- * in a single MongoDB update -- no JS loops over the collection.
+/*
+  2). Change Users Status
+  PATCH /api/users/change-status
+  Header: token
+  Flips every user's status (active -> inactive, inactive -> active)
  */
 exports.changeUsersStatus = async (req, res) => {
   try {
-    // updateMany with an aggregation-pipeline update lets MongoDB compute
-    // the new value per-document server-side in one query, rather than
-    // Claude/Node fetching every user and looping to flip the flag.
+
     const result = await User.updateMany({}, [
       {
         $set: {
@@ -119,13 +106,10 @@ exports.changeUsersStatus = async (req, res) => {
   }
 };
 
-/**
- * 3. Get Distance
- * GET /api/users/distance?Destination_Latitude=..&Destination_Longitude=..
- * Header: token
- * Resolves the calling user's stored lat/long (from the token's user id)
- * and computes distance to the destination point in a single query
- * using MongoDB's native $geoNear (spherical / haversine math done in-DB).
+/*
+  3). Get Distance
+  GET /api/users/distance?Destination_Latitude=..&Destination_Longitude=..
+  Header: token
  */
 exports.getDistance = async (req, res) => {
   try {
@@ -150,9 +134,7 @@ exports.getDistance = async (req, res) => {
 
     const userId = req.user.id;
 
-    // Single aggregation query: $geoNear finds/scopes to this one user
-    // (via the query filter) and returns the spherical distance from the
-    // destination point to that user's stored location, in meters.
+    // Single aggregation query: $geoNear finds/scopes to this one user (via the query filter) and returns the spherical distance from the destination point to that user's stored location, in meters.
     const result = await User.aggregate([
       {
         $geoNear: {
@@ -182,24 +164,13 @@ exports.getDistance = async (req, res) => {
   }
 };
 
-/**
- * 4. Get User Listing
- * GET /api/users/listing?week_number=0,1
- * Header: token
- * week_number is a comma-separated list of day numbers (0 = Sunday ... 6 = Saturday).
- * Returns only the requested days as keys, each holding an array of
- * { name, email } for users who registered on that day.
- *
- * Scale note (spec explicitly asks "what if we have 1 Crore users"):
- * - register_day is precomputed + indexed at write time (see User model),
- *   so this read is a single indexed $in match + $group -- one pass over
- *   only the matching documents, no per-request $dayOfWeek computation
- *   and no application-level loop over the user collection.
- * - Each day's result is capped (LISTING_PER_DAY_LIMIT) to keep the
- *   response bounded; for exporting a full day's users at 10M+ scale,
- *   pair this with a cursor/keyset-paginated endpoint instead of one
- *   giant array.
- */
+/*
+  4). Get User Listing
+  GET /api/users/listing?week_number=0,1,5
+  Header: token
+  week_number is a comma-separated list of day numbers (0 = Sunday ... 6 = Saturday).
+*/
+
 const LISTING_PER_DAY_LIMIT = 1000;
 
 exports.getUserListing = async (req, res) => {
@@ -214,9 +185,7 @@ exports.getUserListing = async (req, res) => {
     }
 
     const requestedDays = [...new Set(
-      week_number
-        .split(',')
-        .map((n) => parseInt(n.trim(), 10))
+      week_number.split(',').map((n) => parseInt(n.trim(), 10))
         .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
     )];
 

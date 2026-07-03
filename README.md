@@ -1,4 +1,4 @@
-# API Assessment — Node.js + Express + Mongoose
+# API Assessment — Node.js + Express + MongoDB
 
 ## Setup
 
@@ -10,17 +10,17 @@ nodemon  # or: npm run dev (nodemon)
 
 ---
 
-### 1. Create User — `POST /api/users/create`
+### 1. Create User — `POST http://localhost:5000/api/users/create`
 
 **Body**
 ```json
 {
-  "name": "Suraj Kumar",
-  "email": "suraj@example.com",
+  "name": "Hariom Kumar",
+  "email": "hariom@example.com",
   "password": "secret123",
-  "address": "New Delhi, India",
-  "latitude": 28.6139,
-  "longitude": 77.2090,
+  "address": "Sitamarhi, Bihar",
+  "latitude": 26.5952,
+  "longitude": 85.4888,
   "status": "active"
 }
 ```
@@ -32,11 +32,11 @@ nodemon  # or: npm run dev (nodemon)
   "status_code": "200",
   "message": "User created successfully",
   "data": {
-    "name": "Suraj Kumar",
-    "email": "suraj@example.com",
-    "address": "New Delhi, India",
-    "latitude": 28.6139,
-    "longitude": 77.209,
+    "name": "Hariom Kumar",
+    "email": "hariom@example.com",
+    "address": "Sitamarhi, Bihar",
+    "latitude": 26.5952,
+    "longitude": 85.4888,
     "status": "active",
     "register_at": "2026-07-03T11:18:47.816Z",
     "token": "eyJhbGciOi..."
@@ -52,14 +52,14 @@ Password is hashed with bcrypt before saving. `latitude`/`longitude` are also st
 
 ---
 
-### 2. Change Users Status — `PUT /api/users/change-status`
+### 2. Change Users Status — `PUT http://localhost:5000/api/users/change-status`
 
 Requires any valid token in the header. Flips **every** user's status in one shot:
 active → inactive and inactive → active — with no JavaScript loop over users.
 
 **Response**
 ```json
-{ "status_code": "200", "message": "Status toggled for 12 user(s)" }
+{ "status_code": "200", "message": "Status toggled for 3 users" }
 ```
 
 **How it avoids loops:** it uses `updateMany` with an aggregation-pipeline update:
@@ -74,7 +74,7 @@ MongoDB computes the new value per document server-side in a single query.
 
 ---
 
-### 3. Get Distance — `GET /api/users/distance?Destination_Latitude=..&Destination_Longitude=..`
+### 3. Get Distance — `GET http://localhost:5000/api/users/distance?Destination_Latitude=28.6129&Destination_Longitude=77.2295`
 
 Requires token. The caller's own current lat/long is resolved from the token
 (the token encodes the user id, which is looked up server-side) and compared
@@ -82,7 +82,7 @@ against the destination point — all in a single MongoDB query, no loops.
 
 **Response**
 ```json
-{ "status_code": "200", "message": "Distance calculated successfully", "distance": "25.34km" }
+{ "status_code": "200", "message": "Distance calculated successfully", "distance": "2.42km" }
 ```
 
 **How it's a single query:** it uses the aggregation `$geoNear` stage against the
@@ -94,7 +94,7 @@ Haversine loop in Node.
 
 ---
 
-### 4. Get User Listing — `GET /api/users/listing?week_number=0,1`
+### 4. Get User Listing — `GET http://localhost:5000/api/users/listing?week_number=0,1`
 
 Requires token. `week_number` is a comma-separated list of day numbers:
 `0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday`.
@@ -107,14 +107,22 @@ Only the requested days appear as keys in the response.
   "status_code": "200",
   "message": "User listing fetched successfully",
   "data": {
-    "sunday": [{ "name": "Bob", "email": "bob@test.com" }],
-    "monday": [{ "name": "Alice", "email": "alice@test.com" }]
+    "status_code": "200",
+    "message": "User listing fetched successfully",
+    "data": {
+      "thursday": [],
+      "friday": [{"name": "Suraj Kumar","email": "suraj@example.com"},
+                  {"name": "bittu Kumar","email": "bittu@example.com"},
+                  {"name": "Hariom Kumar","email": "hariom@example.com"}
+                ],
+      "saturday":[{"name": "pawan singh","email": "pawan@example.com"}]
   }
+}
 }
 
 ```
 
-**Example — `week_number=1,2,3`** returns `monday`, `tuesday`, `wednesday` keys only.
+**Example — `week_number=4,5`** returns `thursday` , `friday` keys only.
 
 ![alt text](image-3.png)
 

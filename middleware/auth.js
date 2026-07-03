@@ -1,14 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 /**
- * Requires a valid JWT in the request header.
- * Accepts either:
- *   Authorization: Bearer <token>
- * or:
- *   token: <token>
- *
- * Per the spec ("Pass any user token in Header"), any signed, valid
- * token is accepted -- it does not have to belong to a specific admin.
+ * Verify JWT token middleware. Checks for a valid token in the Authorization header or in the 'token' header.
  */
 module.exports = (req, res, next) => {
   try {
