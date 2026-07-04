@@ -4,7 +4,7 @@
 
 ```bash
 npm install
-.env   # then fill in MONGO_URI / JWT_SECRET
+.env   # then fill in MONGO_URI | JWT_SECRET | PORT
 nodemon  # or: npm run dev (nodemon)
 ```
 
@@ -52,7 +52,7 @@ Password is hashed with bcrypt before saving. `latitude`/`longitude` are also st
 
 ---
 
-### 2. Change Users Status — `PUT http://localhost:5000/api/users/change-status`
+### 2. Change Users Status — `PATCH http://localhost:5000/api/users/change-status`
 
 Requires any valid token in the header. Flips **every** user's status in one shot:
 active → inactive and inactive → active — with no JavaScript loop over users.
@@ -94,14 +94,14 @@ Haversine loop in Node.
 
 ---
 
-### 4. Get User Listing — `GET http://localhost:5000/api/users/listing?week_number=0,1`
+### 4. Get User Listing — `GET http://localhost:5000/api/users/listing?week_number=4,5`
 
 Requires token. `week_number` is a comma-separated list of day numbers:
 `0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday`.
 
 Only the requested days appear as keys in the response.
 
-**Example — `week_number=0,1`**
+**Example — `week_number=4,5`**
 ```json
 {
   "status_code": "200",
@@ -140,3 +140,5 @@ api-assessment/
 ├── package.json
 └── .env
 ```
+---
+

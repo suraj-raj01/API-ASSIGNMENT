@@ -34,11 +34,9 @@ const userSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['active', 'inactive'],
-    default: 'active' // Q1: status is active by default
+    default: 'active' // status is active by default
   },
-  // GeoJSON point mirrors latitude/longitude so MongoDB can do native
-  // geospatial math (used by Q3 "Get Distance") in a single DB query
-  // instead of pulling data into Node and looping/calculating manually.
+  // GeoJSON point mirrors latitude/longitude so MongoDB can do native geospatial math.
   location: {
     type: {
       type: String,
@@ -54,11 +52,7 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  // Precomputed day-of-week (0 = Sunday ... 6 = Saturday), matching
-  // JS Date#getDay() and the spec's numbering. Storing this (instead of
-  // computing $dayOfWeek on the fly for every query) lets Q4's listing
-  // endpoint use a plain indexed equality/$in match, which is what keeps
-  // it fast at "1 crore" (10 million+) user scale.
+  // Precomputed day-of-week (0 = Sunday ... 6 = Saturday)
   register_day: {
     type: Number,
     min: 0,
@@ -66,7 +60,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Indexes
+// Indexes (for performance and scalability)
 userSchema.index({ location: '2dsphere' }); // Q3: geospatial distance queries
 userSchema.index({ register_day: 1 }); // Q4: day-wise listing at scale
 userSchema.index({ status: 1 }); // Q2: bulk status toggle

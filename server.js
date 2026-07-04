@@ -12,7 +12,7 @@ app.use(express.urlencoded({ extended: true }));
 connectDB();
 
 app.get('/', (req, res) => {
-  res.status(200).json({ status_code: 200, message: 'API Assessment server is running' });
+  res.status(200).json({ status_code: 200, message: 'API Assessment server is running 🚀' });
 });
 
 // Routes
@@ -29,4 +29,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ status_code: '500', message: 'Something went wrong' });
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT} ✅`));
